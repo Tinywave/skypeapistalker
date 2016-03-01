@@ -57,14 +57,14 @@ if __name__ == "__main__":
         cur.execute('create table friendsdata (skypeid text, timestamp text, onlinestatus text, fullname text);')
     except sqlite3.OperationalError:
         pass
-    pprint.pprint(cur.execute('select * from friendsdata;').fetchall())
+    #pprint.pprint(cur.execute('select * from friendsdata;').fetchall())
 
     t = MySkype()
     t.start()
     while True:
         friends = t.send_dbus_message("search friends")[len('USERS '):].split(',')
         friends.append(t.send_dbus_message("get currentuserhandle")[len('CURRENTUSERHANDLE '):])
-        time = datetime.datetime.utcnow().timestamp()
+        timestamp = datetime.datetime.utcnow().timestamp()
         for user in friends:
             user = user.strip()
             try:
@@ -79,7 +79,7 @@ if __name__ == "__main__":
                 fullname = 'UNDEFINED'
             cur.execute("insert into friendsdata (skypeid, timestamp, onlinestatus, fullname) values (?, ?, ?, ?);",
                         (user,
-                         time,
+                         timestamp,
                          onlinestatus,
                          fullname))
             conn.commit()
