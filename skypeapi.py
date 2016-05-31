@@ -6,7 +6,6 @@ import dbus.mainloop.glib
 import dbus.service
 
 import datetime
-import pprint
 import re
 import sqlite3
 import sys
@@ -14,7 +13,7 @@ import time
 from threading import Thread
 
 
-class MySkype(Thread):
+class Skype(Thread):
     def __init__(self):
 
         remote_bus = dbus.SessionBus(mainloop=dbus.mainloop.glib.DBusGMainLoop(set_as_default=True))
@@ -49,6 +48,22 @@ class MySkype(Thread):
         response = self.skype_api_object.Invoke(message)
         return response
 
+    def send_chatmessage(self, receiver, message):
+        return self.skype_api_object.Invoke("CHATMESSAGE {receiver} {message}".format(receiver=receiver, message=message))
+
+    def search_friends(self):
+        return self.skype_api_object.Invoke("SEARCH FRIENDS")[len('USERS '):].split(',')
+
+    def get_currentuserhandle(self):
+        return self.skype_api_object.Invoke("GET CURRENTUSERHANDLE")[len('CURRENTUSERHANDLE '):]
+
+    def get_user_onlinestatus(self, user):
+        try:
+            return re.match('^USER .*? ONLINESTATUS (?P<status>.*?)$',
+                                    self.skype_api_object.Invoke("GET USER {0} ONLINESTATUS".format(user))).group('status')
+        except:
+            return 'UNDEFINED'
+
 
 if __name__ == "__main__":
     conn = sqlite3.connect('skypeapi.db')
@@ -59,7 +74,7 @@ if __name__ == "__main__":
         pass
     #pprint.pprint(cur.execute('select * from friendsdata;').fetchall())
 
-    t = MySkype()
+    t = Skype()
     t.start()
     while True:
         friends = t.send_dbus_message("search friends")[len('USERS '):].split(',')
